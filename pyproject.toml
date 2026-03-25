@@ -1,0 +1,21 @@
+[project]
+name = "yira"
+version = "0.1.0"
+description = "Local-first JIRA task manager — edit tasks as YAML, push changes to JIRA Cloud"
+requires-python = ">=3.10"
+dependencies = [
+    "jira>=3.8",
+    "pyyaml>=6.0",
+    "click>=8.1",
+    "rich>=13.0",
+]
+
+[project.scripts]
+yira = "yira.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["yira*"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

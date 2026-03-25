@@ -1,0 +1,12 @@
+# yira configuration
+# Copy this file to config.yaml and fill in your values.
+# IMPORTANT: Never commit config.yaml — it contains your API token.
+
+jira:
+  server: "https://your-domain.atlassian.net"
+  email: "you@example.com"
+  api_token: "your-api-token-here"     # https://id.atlassian.com/manage-profile/security/api-tokens
+  default_project: "PROJ"              # default JIRA project key
+
+# Where local task YAML files are stored (relative to this file)
+tasks_dir: "tasks"

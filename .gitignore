@@ -1,0 +1,22 @@
+# Credentials — NEVER commit
+config.yaml
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+#working dir
+/tasks
+/releases
