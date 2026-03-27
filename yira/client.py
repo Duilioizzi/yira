@@ -132,6 +132,15 @@ def push_task(jira: JIRA, task: Task, custom_fields: dict[str, str] | None = Non
     issue = jira.issue(task.key)
     issue.update(fields=update_fields)
 
+    # Assignee requires accountId lookup — handle separately
+    if task.assignee:
+        project = task.key.split("-")[0]
+        users = jira.search_assignable_users_for_issues(
+            query=task.assignee, project=project, maxResults=1,
+        )
+        if users:
+            issue.update(fields={"assignee": {"accountId": users[0].accountId}})
+
 
 def transition_task(jira: JIRA, task: Task, target_status: str) -> bool:
     """Attempt to transition an issue to target_status. Returns True on success."""

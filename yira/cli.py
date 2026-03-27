@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.table import Table
 
 from .client import (
+    CUSTOM_FIELDS,
     connect, issue_to_task, pull_issues, push_task, transition_task,
     list_versions, create_version, release_version,
     get_version_issues, assign_version, generate_release_notes,
@@ -279,6 +280,7 @@ def push_new(ctx, project):
         return
 
     jira = connect(cfg)
+    cf = CUSTOM_FIELDS
     for path in new_files:
         task = Task.load(path)
         fields = {
@@ -288,14 +290,46 @@ def push_new(ctx, project):
             "issuetype": {"name": task.issuetype or "Task"},
             "priority": {"name": task.priority or "Medium"},
         }
+        if task.assignee:
+            # Cloud uses accountId; search assignable users to resolve display name
+            users = jira.search_assignable_users_for_issues(
+                query=task.assignee, project=proj, maxResults=1,
+            )
+            if users:
+                fields["assignee"] = {"accountId": users[0].accountId}
         if task.labels:
             fields["labels"] = task.labels
         if task.story_points is not None:
-            fields["story_points"] = task.story_points
+            fields[cf["story_points"]] = task.story_points
+        if task.epic_link:
+            fields[cf["epic_link"]] = task.epic_link
+        if task.sprint:
+            # Sprint requires board lookup; assign after creation
+            pass
+        if task.components:
+            fields["components"] = [{"name": c} for c in task.components]
+        if task.duedate:
+            fields["duedate"] = task.duedate
+        if task.startdate:
+            fields[cf.get("startdate", "customfield_10015")] = task.startdate
+        if task.fix_version:
+            fields["fixVersions"] = [{"name": task.fix_version}]
 
         try:
             issue = jira.create_issue(fields=fields)
-            new_task = issue_to_task(issue)
+            # Assign to sprint after creation (requires board lookup)
+            if task.sprint:
+                boards = jira.boards(projectKeyOrID=proj, maxResults=5)
+                for board in boards:
+                    sprints = jira.sprints(board.id, state="active,future")
+                    for s in sprints:
+                        if s.name == task.sprint:
+                            jira.add_issues_to_sprint(s.id, [issue.key])
+                            break
+                    else:
+                        continue
+                    break
+            new_task = issue_to_task(jira.issue(issue.key))
             new_task.mark_synced()
             new_task.save(tasks_dir)
             path.unlink()  # remove NEW-XXXX.yaml
